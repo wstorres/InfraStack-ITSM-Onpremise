@@ -1,1 +1,106 @@
+version: '3.8'
 
+services:
+  # Serviço GLPI (Gestão de Chamados e Inventário)
+  glpi:
+    image: glpi/glpi:latest
+    container_name: glpi
+    ports:
+      - "80:80" # Acessível via HTTP na porta 80 do seu servidor
+    environment:
+      - MYSQL_ROOT_PASSWORD=SUA_SENHA_FORTE_GLPI_DB_ROOT # <--- ALTERE ESTA SENHA!
+      - MYSQL_DATABASE=glpidb
+      - MYSQL_USER=glpiuser
+      - MYSQL_PASSWORD=SUA_SENHA_FORTE_GLPI_USER # <--- ALTERE ESTA SENHA!
+    volumes:
+      - glpi_data:/var/www/html # Persistência dos dados do GLPI
+    depends_on:
+      - glpi_db
+    restart: unless-stopped # Reinicia o container automaticamente, a menos que seja parado manualmente
+
+  glpi_db:
+    image: mariadb:10.6 # Banco de dados para o GLPI
+    container_name: glpi_db
+    environment:
+      - MYSQL_ROOT_PASSWORD=SUA_SENHA_FORTE_GLPI_DB_ROOT # <--- DEVE SER A MESMA SENHA DO SERVIÇO GLPI!
+      - MYSQL_DATABASE=glpidb
+      - MYSQL_USER=glpiuser
+      - MYSQL_PASSWORD=SUA_SENHA_FORTE_GLPI_USER # <--- DEVE SER A MESMA SENHA DO SERVIÇO GLPI!
+    volumes:
+      - glpi_db_data:/var/lib/mysql # Persistência dos dados do banco de dados
+    restart: unless-stopped
+
+  # Serviço Zabbix Server
+  zabbix_server:
+    image: zabbix/zabbix-server-mysql:latest
+    container_name: zabbix_server
+    ports:
+      - "10051:10051" # Porta padrão para o Zabbix Agent (se você for monitorar outros hosts)
+    environment:
+      - DB_SERVER_HOST=zabbix_db
+      - MYSQL_USER=zabbix
+      - MYSQL_PASSWORD=SUA_SENHA_FORTE_ZABBIX_USER # <--- ALTERE ESTA SENHA!
+      - MYSQL_DATABASE=zabbixdb
+      - ZBX_SERVER_NAME=Infrastack Zabbix Server # Nome visível no Zabbix
+    depends_on:
+      - zabbix_db
+    restart: unless-stopped
+
+  zabbix_web:
+    image: zabbix/zabbix-web-apache-mysql:latest
+    container_name: zabbix_web
+    ports:
+      - "8080:8080" # Acessível via HTTP na porta 8080 do seu servidor
+    environment:
+      - ZBX_SERVER_HOST=zabbix_server
+      - DB_SERVER_HOST=zabbix_db
+      - MYSQL_USER=zabbix
+      - MYSQL_PASSWORD=SUA_SENHA_FORTE_ZABBIX_USER # <--- DEVE SER A MESMA SENHA DO SERVIÇO ZABBIX_SERVER!
+      - MYSQL_DATABASE=zabbixdb
+      - PHP_TZ=America/Sao_Paulo # Ajuste o fuso horário para sua região (ex: America/Sao_Paulo)
+    depends_on:
+      - zabbix_server
+    restart: unless-stopped
+
+  zabbix_db:
+    image: mysql:8.0 # Banco de dados para o Zabbix
+    container_name: zabbix_db
+    environment:
+      - MYSQL_ROOT_PASSWORD=SUA_SENHA_FORTE_ZABBIX_DB_ROOT # <--- ALTERE ESTA SENHA!
+      - MYSQL_DATABASE=zabbixdb
+      - MYSQL_USER=zabbix
+      - MYSQL_PASSWORD=SUA_SENHA_FORTE_ZABBIX_USER # <--- DEVE SER A MESMA SENHA DO SERVIÇO ZABBIX_SERVER!
+    volumes:
+      - zabbix_db_data:/var/lib/mysql # Persistência dos dados do banco de dados
+    restart: unless-stopped
+
+  # Serviço Grafana (Dashboards e Visualização)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000" # Acessível via HTTP na porta 3000 do seu servidor
+    volumes:
+      - grafana_data:/var/lib/grafana # Persistência dos dados de configuração e dashboards
+    restart: unless-stopped
+
+  # Serviço Portainer (Gerenciamento de Containers Docker)
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    command: -H unix:///var/run/docker.sock # Conecta o Portainer ao daemon Docker local
+    ports:
+      - "9000:9000" # Acessível via HTTP na porta 9000 do seu servidor
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock # Necessário para o Portainer gerenciar o Docker
+      - portainer_data:/data # Persistência dos dados de configuração do Portainer
+    restart: unless-stopped
+
+# Definição dos volumes para garantir a persistência dos dados
+volumes:
+  glpi_data:
+  glpi_db_data:
+  zabbix_server_data:
+  zabbix_db_data:
+  grafana_data:
+  portainer_data:
