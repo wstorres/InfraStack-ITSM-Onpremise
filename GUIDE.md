@@ -109,6 +109,7 @@ Quando o `terraform apply` terminar, ele exibirá as "Saídas" (Outputs). É aqu
 * grafana_url = "http://SEU_IP_DO_SERVIDOR:3000"
 * portainer_url = "http://SEU_IP_DO_SERVIDOR:9000"
 * zabbix_url = "http://SEU_IP_DO_SERVIDOR:8080"
+* ssh_access_tip = "ssh -i CAMINHO_PARA_SUA_CHAVE_PRIVADA_SSH SEU_USUARIO_SSH@SEU_IP_DO_SERVIDOR"
 
 * **`portainer_url`:** Copie este URL e cole-o no seu navegador. Esta será a **primeira ferramenta a ser acessada**, pois é por onde você gerenciará seu ambiente Docker.
     * **Primeiro acesso ao Portainer:** Você será solicitado a criar um usuário e senha de administrador para o Portainer.
