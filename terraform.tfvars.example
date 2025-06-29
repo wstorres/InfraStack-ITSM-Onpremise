@@ -1,1 +1,6 @@
+# Exemplo de arquivo terraform.tfvars para implantação local
+# Copie este arquivo para terraform.tfvars e preencha com seus valores
 
+local_server_ip           = "192.168.1.100" # Substitua pelo IP real do seu servidor local
+local_server_user         = "ubuntu"       # Substitua pelo nome de usuário SSH do seu servidor (ex: root, admin, seu_usuario)
+local_server_ssh_key_path = "/home/seu_usuario/.ssh/id_rsa" # Substitua pelo caminho COMPLETO para sua chave privada SSH
