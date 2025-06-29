@@ -102,3 +102,53 @@ Com tudo configurado, você está pronto para mandar o Terraform configurar seu 
 ## ✅ Verifique a Implantação
 
 Quando o `terraform apply` terminar, ele exibirá as "Saídas" (Outputs). É aqui que você encontra as informações para acessar suas ferramentas:
+
+### Outputs:
+
+* glpi_url = "http://SEU_IP_DO_SERVIDOR/glpi"
+* grafana_url = "http://SEU_IP_DO_SERVIDOR:3000"
+* portainer_url = "http://SEU_IP_DO_SERVIDOR:9000"
+* zabbix_url = "http://SEU_IP_DO_SERVIDOR:8080"
+
+* **`glpi_url`, `zabbix_url`, `grafana_url`, `portainer_url`:** Copie esses URLs e cole-os no seu navegador. Você deverá conseguir acessar as interfaces web das ferramentas!
+
+    * **Importante:** Certifique-se de que o **firewall** do seu servidor local (ex: `ufw` no Ubuntu) esteja configurado para permitir o acesso às portas **80 (GLPI), 8080 (Zabbix), 3000 (Grafana) e 9000 (Portainer)** a partir da sua rede.
+    * **Primeiro acesso ao Portainer:** Você será solicitado a criar um usuário e senha admin.
+    * **Primeiro acesso ao GLPI:** Siga o assistente de instalação. Use os dados do banco de dados que você configurou no `docker-compose.yml` (e alterou as senhas).
+    * **Primeiro acesso ao Zabbix:** O login padrão geralmente é `Admin` com senha `zabbix`.
+    * **Primeiro acesso ao Grafana:** O login padrão geralmente é `admin` com senha `admin`. Será pedido para você mudar a senha no primeiro login.
+
+---
+
+## 🗑️ Como Desfazer a Implantação (Limpeza)
+
+O `terraform destroy` para este cenário local é um pouco diferente. Ele não vai "destruir" o seu servidor físico ou VM. Em vez disso, ele pode ser usado para remover os arquivos que o Terraform copiou e tentar parar os serviços Docker. No entanto, a remoção completa dos containers e imagens é geralmente feita diretamente no servidor.
+
+Para limpar os recursos do InfraStack no seu servidor:
+
+1.  **Conecte-se via SSH ao seu servidor:**
+
+    ```bash
+    ssh -i CAMINHO_PARA_SUA_CHAVE_PRIVADA_SSH SEU_USUARIO_SSH@SEU_IP_DO_SERVIDOR
+    ```
+
+2.  **No servidor, navegue até a pasta onde os arquivos foram copiados e pare os containers:**
+
+    ```bash
+    cd /tmp # Ou onde você configurou o destino no main.tf
+    sudo docker-compose down
+    sudo docker rmi $(sudo docker images -aq) # Remove todas as imagens (cuidado, remove TODAS as imagens, não só as do InfraStack!)
+    sudo docker volume rm $(sudo docker volume ls -q) # Remove todos os volumes (cuidado, remove TODOS os volumes!)
+    ```
+
+    *Para remover apenas os volumes e imagens específicos do InfraStack, você precisaria de comandos mais seletivos.*
+
+3.  **Remova os arquivos copiados pelo Terraform:**
+
+    ```bash
+    sudo rm /tmp/install_docker.sh /tmp/docker-compose.yml
+    ```
+
+Lembre-se que o Terraform não desinstalará o Docker ou Docker Compose do seu servidor. Isso precisaria ser feito manualmente se desejado.
+
+---
